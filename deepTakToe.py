@@ -115,6 +115,20 @@ def decide_move(board, side):
             next_board = copy.deepcopy(board)
             next_board[square_index] = side
             evaluated_moves[square_index] = eval_board(next_board, side, next_turn)
+
+    #look for a quick win
+    for i in evaluated_moves.keys():
+        if evaluated_moves[i] == 1:
+            print("Considered", moves_considered, "possible outcomes.")
+            print("Found a winning move!")
+            return i
+    # if no quick win, look for a needed block
+    for i in evaluated_moves.keys():
+        if evaluated_moves[i] == -1:
+            print("Considered", moves_considered, "possible outcomes.")
+            print("Need to block")
+            return i
+    # if no wins or blocks needed, take the best long term move
     best_move = max(evaluated_moves, key=evaluated_moves.get)
     print("Considered", moves_considered, "possible outcomes.")
     print(evaluated_moves)
