@@ -1,12 +1,6 @@
 import copy
 
-main_board = ['_' for x in range(9)]
-board_x_col_win = ['x', '_', '_', 'x', '_', '_', 'x', '_', '_']
-board_o_row_win = ['o', 'o', 'o', 'x', '_', '_', 'x', '_', '_']
-board_draw = ['o', 'x', 'o', 'x', 'x', 'o', 'x', 'o', 'x']
-board_no_winner = ['o', '_', 'o', 'x', 'x', '_', '_', '_', 'x']
-
-print(main_board)
+moves_considered = 0
 
 
 def print_board(board):
@@ -15,19 +9,30 @@ def print_board(board):
     print(board[6], board[7], board[8])
 
 
+def print_player_choice(board):
+    print("0:", board[0], "1:", board[1], "2:", board[2])
+    print("3:", board[3], "4:", board[4], "5:", board[5])
+    print("6:", board[6], "7:", board[7], "8:", board[8])
+
+
 def check_for_win(board):
+    """
+    Checks to see if the game is over or has a winner
+    :param board: the board to check
+    :return: the side that won, or 'draw', or None if the game continues
+    """
     winner = None
     # first check x's then check o's
     for side in ['x', 'o']:
         # check for row wins
-        for index in [0, 3, 5]:
+        for index in [0, 3, 6]:
             if board[index] == side and board[index + 1] == side and board[index + 2] == side:
                 return side
         # check for col wins
         for index in [0, 1, 2]:
             if board[index] == side and board[index + 3] == side and board[index + 6] == side:
                 return side
-        # check for diagnal wins
+        # check for diagonal wins
         if board[0] == side and board[4] == side and board[8] == side:
             return side
         if board[2] == side and board[4] == side and board[6] == side:
@@ -49,6 +54,16 @@ def moves_left(board):
 
 
 def eval_board(board, side, current_turn):
+    """
+    Evaluates the strength of a possible move recursively by looking at all possible
+    outcomes and the ratio of possible wins to losses
+    :param board: the board that shows the move to evaluate
+    :param side: the side of the player who is evaluating
+    :param current_turn: the side of who's turn it is to move. This is included
+    because it considers all possible moves from both sides
+    :return:
+    """
+    global moves_considered
     next_turn = 'x'
     if current_turn == 'x': next_turn = 'o'
     eval_score = 0
@@ -61,11 +76,12 @@ def eval_board(board, side, current_turn):
         #iter through all possible moves
         for square_index, square_contents in enumerate(board):
             #if this is a valid move, evlauate the possible futures of that move
-            if square_contents == '_': # if the square is empty
+            moves_considered += 1
+            if square_contents == '_':  # if the square is empty
                 next_board = copy.deepcopy(board)
                 next_board[square_index] = current_turn
                 eval_score += eval_board(next_board, side, next_turn)
-        return eval_score # return the score of this board state
+        return eval_score  # return the score of this board state
 
     # if board is a win return 1
     if win_state == side:
@@ -75,19 +91,63 @@ def eval_board(board, side, current_turn):
         return -1
 
 
+def decide_move(board, side):
+    """
+    Evaluates all possible moves recursively. Called when it is the deepAI's turn.
+    :param board: the current gameboard
+    :param side: the side of the deepAI
+    :return: the index of the square that should be moved into
+    """
+    # reject a draw game
+    if moves_left(board) == False:
+        print("no moves left")
+        return None
+    #reset the moves considered global tracker
+    global moves_considered
+    moves_considered = 0
+    #evaluate all possible moves
+    evaluated_moves = {}
+    next_turn = 'x'  # the side of the next player
+    if side == 'x': next_turn = 'o'
+    for square_index, square_contents in enumerate(board):
+        #if this is a valid move, evlauate the possible futures of that move
+        if square_contents == '_':  # if the square is empty
+            next_board = copy.deepcopy(board)
+            next_board[square_index] = side
+            evaluated_moves[square_index] = eval_board(next_board, side, next_turn)
+    best_move = max(evaluated_moves, key=evaluated_moves.get)
+    print("Considered", moves_considered, "possible outcomes.")
+    print(evaluated_moves)
+    print("best move is to go to square", best_move, "that has a score of", evaluated_moves[best_move])
+
+    return best_move  # return the index of the square that is best to move into
 
 
+#################
+## Main Gameplay Loop
+#################
 
-print_board(main_board)
-print(check_for_win(main_board))
-print_board(board_x_col_win)
-print(check_for_win(board_x_col_win))
-print_board(board_o_row_win)
-print(check_for_win(board_o_row_win))
-print_board(board_draw)
-print(check_for_win(board_draw))
-print_board(board_no_winner)
-print(check_for_win(board_no_winner))
-print(eval_board(board_no_winner, 'x', 'x'))
-print(eval_board(board_no_winner, 'o', 'x'))
+keep_playing = True
+while (keep_playing):  # keep looping until the user quits
+    # build a blank board
+    main_board = ['_' for x in range(9)]
 
+    # loop until the game is over to get human and computer moves
+    while check_for_win(main_board) == None:
+        print()
+        print_player_choice(main_board)
+        human_move = int(input("make your move: "))
+        main_board[human_move] = 'x'
+        # only have the computer move if the game is not over
+        if check_for_win(main_board) == None:
+            computer_move = decide_move(main_board, 'o')
+            main_board[computer_move] = 'o'
+
+    print()
+    print_board(main_board)
+    outcome = check_for_win(main_board)
+    if outcome == 'x': print("you win")
+    if outcome == 'o': print("you lose")
+    if outcome == 'draw': print("draw game")
+
+    if input("Enter 'q' to quit.").lower() == 'q': keep_playing = False
