@@ -1,3 +1,13 @@
+"""
+File: deepTakToe.py
+Description: Plays tic-tac-toe by recursively evaluating all
+possible outcomes that could come from the available moves
+Author: Russell Johnson
+Created: 2025-05-31
+Version: 1.1
+"""
+
+
 import copy
 
 moves_considered = 0
@@ -21,7 +31,6 @@ def check_for_win(board):
     :param board: the board to check
     :return: the side that won, or 'draw', or None if the game continues
     """
-    winner = None
     # first check x's then check o's
     for side in ['x', 'o']:
         # check for row wins
@@ -61,7 +70,7 @@ def eval_board(board, side, current_turn):
     :param side: the side of the player who is evaluating
     :param current_turn: the side of who's turn it is to move. This is included
     because it considers all possible moves from both sides
-    :return:
+    :return: dict of the possible wins and losses
     """
     global moves_considered
     next_turn = 'x'
@@ -72,7 +81,7 @@ def eval_board(board, side, current_turn):
     if win_state == 'draw':
         return eval_score
     # if game continues recursively check the next layer of moves
-    if win_state == None:
+    if win_state is None:
         # iter through all possible moves
         for square_index, square_contents in enumerate(board):
             # if this is a valid move, evaluate the possible futures of that move
@@ -84,7 +93,6 @@ def eval_board(board, side, current_turn):
                 eval_score["wins"] += move_eval["wins"]
                 eval_score["losses"] += move_eval["losses"]
         return eval_score  # return the score of this board state
-
     # if board is a win return 1
     if win_state == side:
         eval_score["wins"] = 1
@@ -106,51 +114,53 @@ def decide_move(board, side):
     if moves_left(board) == False:
         print("no moves left")
         return None
-    #reset the moves considered global tracker
+    # reset the moves considered global tracker
     global moves_considered
     moves_considered = 0
-    #evaluate all possible moves
+    # evaluate all possible moves
     evaluated_moves = {}
     next_turn = 'x'  # the side of the next player
     if side == 'x': next_turn = 'o'
     for square_index, square_contents in enumerate(board):
-        #if this is a valid move, evlauate the possible futures of that move
+        # if this is a valid move, evaluate the possible futures of that move
         if square_contents == '_':  # if the square is empty
             next_board = copy.deepcopy(board)
             next_board[square_index] = side
             move_wins_losses = eval_board(next_board, side, next_turn)
             if move_wins_losses["losses"] == 0 and move_wins_losses["wins"] == 0:
-                evaluated_moves[square_index] = 0
+                # bump this up above zero because a draw is better than a loss
+                evaluated_moves[square_index] = 0.01
             else:
-                evaluated_moves[square_index] = move_wins_losses["wins"]/(move_wins_losses["wins"] + move_wins_losses["losses"])
-
+                evaluated_moves[square_index] = move_wins_losses["wins"] / (
+                        move_wins_losses["wins"] + move_wins_losses["losses"])
 
     # if no wins or blocks needed, take the best long term move
     best_move = max(evaluated_moves, key=evaluated_moves.get)
     print("Considered", moves_considered, "possible outcomes.")
-    print(evaluated_moves)
-    print("best move is to go to square", best_move, "that has a score of", evaluated_moves[best_move])
+    for key, value in evaluated_moves.items():
+        print(f"Square {key} : {value:.2f}")
+    print(f"Best move is to go to square {best_move} that has a score of {evaluated_moves[best_move]:.2f}")
 
     return best_move  # return the index of the square that is best to move into
 
 
 #################
-## Main Gameplay Loop
+# Main Gameplay Loop
 #################
 
 keep_playing = True
-while (keep_playing):  # keep looping until the user quits
+while keep_playing:  # keep looping until the user quits
     # build a blank board
     main_board = ['_' for x in range(9)]
 
     # loop until the game is over to get human and computer moves
-    while check_for_win(main_board) == None:
+    while check_for_win(main_board) is None:
         print()
         print_player_choice(main_board)
         human_move = int(input("make your move: "))
         main_board[human_move] = 'x'
         # only have the computer move if the game is not over
-        if check_for_win(main_board) == None:
+        if check_for_win(main_board) is None:
             computer_move = decide_move(main_board, 'o')
             main_board[computer_move] = 'o'
 
