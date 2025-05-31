@@ -66,29 +66,33 @@ def eval_board(board, side, current_turn):
     global moves_considered
     next_turn = 'x'
     if current_turn == 'x': next_turn = 'o'
-    eval_score = 0
+    eval_score = {"wins": 0, "losses": 0}
     win_state = check_for_win(board)
     # if board game ends in draw return 0
     if win_state == 'draw':
-        return 0
+        return eval_score
     # if game continues recursively check the next layer of moves
     if win_state == None:
-        #iter through all possible moves
+        # iter through all possible moves
         for square_index, square_contents in enumerate(board):
-            #if this is a valid move, evlauate the possible futures of that move
+            # if this is a valid move, evaluate the possible futures of that move
             moves_considered += 1
             if square_contents == '_':  # if the square is empty
                 next_board = copy.deepcopy(board)
                 next_board[square_index] = current_turn
-                eval_score += eval_board(next_board, side, next_turn)
+                move_eval = eval_board(next_board, side, next_turn)
+                eval_score["wins"] += move_eval["wins"]
+                eval_score["losses"] += move_eval["losses"]
         return eval_score  # return the score of this board state
 
     # if board is a win return 1
     if win_state == side:
-        return 1
+        eval_score["wins"] = 1
+        return eval_score
     # if board is a loss return -1
     if win_state != side:
-        return -1
+        eval_score["losses"] = 1
+        return eval_score
 
 
 def decide_move(board, side):
@@ -114,20 +118,13 @@ def decide_move(board, side):
         if square_contents == '_':  # if the square is empty
             next_board = copy.deepcopy(board)
             next_board[square_index] = side
-            evaluated_moves[square_index] = eval_board(next_board, side, next_turn)
+            move_wins_losses = eval_board(next_board, side, next_turn)
+            if move_wins_losses["losses"] == 0 and move_wins_losses["wins"] == 0:
+                evaluated_moves[square_index] = 0
+            else:
+                evaluated_moves[square_index] = move_wins_losses["wins"]/(move_wins_losses["wins"] + move_wins_losses["losses"])
 
-    #look for a quick win
-    for i in evaluated_moves.keys():
-        if evaluated_moves[i] == 1:
-            print("Considered", moves_considered, "possible outcomes.")
-            print("Found a winning move!")
-            return i
-    # if no quick win, look for a needed block
-    for i in evaluated_moves.keys():
-        if evaluated_moves[i] == -1:
-            print("Considered", moves_considered, "possible outcomes.")
-            print("Need to block")
-            return i
+
     # if no wins or blocks needed, take the best long term move
     best_move = max(evaluated_moves, key=evaluated_moves.get)
     print("Considered", moves_considered, "possible outcomes.")
