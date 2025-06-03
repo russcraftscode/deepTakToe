@@ -154,12 +154,14 @@ while keep_playing:  # keep looping until the user quits
     # build a blank board
     main_board = ['_' for square in range(9)]
 
+    print()
+    # if the computer takes the first turn
+    if not human_goes_first:
+        computer_move = decide_move(main_board, 'o')
+        main_board[computer_move] = 'o'
+
     # loop until the game is over to get human and computer moves
     while check_for_win(main_board) is None:
-        print()
-        if not human_goes_first:
-            computer_move = decide_move(main_board, 'o')
-            main_board[computer_move] = 'o'
         print_player_choice(main_board)
         human_move = int(input("make your move: "))
         main_board[human_move] = 'x'
