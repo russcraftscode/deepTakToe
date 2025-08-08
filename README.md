@@ -98,9 +98,4 @@ Square 2 : 0.27
 Best move is to go to square 1 that has a score of 0.34
 ```
 
-## 📝 License
-
-### GNU GENERAL PUBLIC LICENSE
-#### Version 3, 29 June 2007  
-This project is for educational use and experimentation.
 
